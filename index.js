@@ -21,6 +21,12 @@ module.exports = function jsonStream(bytes){
   return function jsonStream(req, res, next) {
     var incomingData = ""
     req.jsonStream = function(cbEach, cbDone) {
+      if (req.method != "POST" && req.method != "PUT") {
+        return cbDone(new Error("Can not stream in unless the request method is POST or PUT got " + req.method));
+      }
+      if (req.headers["content-type"] != "application/jsonstream") {
+        return cbDone(new Error("Only a content-type of application/jsonstream may be streamed in got " + req.headers["content-type"]));
+      }
       req.on("data", function(data) {
         incomingData += data.toString("utf8");
         var chunks = incomingData.split("\n");

@@ -9,8 +9,41 @@
  * sets the Content-Type: application/jsonstream header and writes \n delimited JSON objects
  */
 
+function RemnantError(remnant) {
+  this.name = "RemnantError"
+  this.message = "There was data remaining on a JSON stream."
+  this.remnant = remnant;
+}
+RemnantError.prototype = new Error();
+RemnantError.prototype.constructor = RemnantError;
+
 module.exports = function jsonStream(bytes){
   return function jsonStream(req, res, next) {
+    var incomingData = ""
+    req.jsonStream = function(cbEach, cbDone) {
+      req.on("data", function(data) {
+        incomingData += data.toString("utf8");
+        var chunks = incomingData.split("\n");
+        // The last one will always have the last bit or empty
+        incomingData = chunks[chunks.length];
+        // Iterate over all but the last one, handled above
+        for (var i = 0; i < chunks.length - 1; ++i) {
+          var obj;
+          try {
+            obj = JSON.parse(chunks[i]);
+          } catch (E) {
+            // TODO:  What are we doing here?
+          }
+          cbEach(obj);
+        }
+      });
+      req.on("end", function() {
+         if (incomingData) {
+           return cbDone(new RemnantError(incomingData));
+         }
+         cbDone();
+      });
+    }
     var first = true;
     res.jsonStream = function(object) {
       if (!(object && object instanceof Object)) return;

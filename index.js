@@ -25,7 +25,7 @@ module.exports = function jsonStream(bytes){
         incomingData += data.toString("utf8");
         var chunks = incomingData.split("\n");
         // The last one will always have the last bit or empty
-        incomingData = chunks[chunks.length];
+        incomingData = chunks[chunks.length - 1];
         // Iterate over all but the last one, handled above
         for (var i = 0; i < chunks.length - 1; ++i) {
           var obj;

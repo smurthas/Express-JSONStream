@@ -1,7 +1,7 @@
 {
   "name": "express-jsonstream",
   "description": "Simple middleware for JSON streaming in Express",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Simon Murtha-Smith <simon@murtha-smith.com>",
   "keywords": [
     "express",

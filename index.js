@@ -20,6 +20,8 @@ RemnantError.prototype.constructor = RemnantError;
 module.exports = function jsonStream(bytes){
   return function jsonStream(req, res, next) {
     var incomingData = ""
+    var errs = [];
+    // for parsing incoming jsonstream data via a POST or PUT request
     req.jsonStream = function(cbEach, cbDone) {
       if (req.method != "POST" && req.method != "PUT") {
         return cbDone(new Error("Can not stream in unless the request method is POST or PUT got " + req.method));
@@ -38,18 +40,19 @@ module.exports = function jsonStream(bytes){
           try {
             obj = JSON.parse(chunks[i]);
           } catch (E) {
-            // TODO:  What are we doing here?
+            errs.push(E);
           }
           cbEach(obj);
         }
       });
       req.on("end", function() {
-         if (incomingData) {
-           return cbDone(new RemnantError(incomingData));
-         }
-         cbDone();
+        if (incomingData) errs.push(new RemnantError(incomingData));
+        if (errs.length > 0) return cbDone(errs);
+        cbDone();
       });
     }
+
+    // for pushing out jsonstream data via a GET request
     var first = true;
     res.jsonStream = function(object) {
       if (!(object && object instanceof Object)) return;

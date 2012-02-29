@@ -9,47 +9,23 @@
  * sets the Content-Type: application/jsonstream header and writes \n delimited JSON objects
  */
 
-function RemnantError(remnant) {
-  this.name = "RemnantError"
-  this.message = "There was data remaining on a JSON stream."
-  this.remnant = remnant;
-}
-RemnantError.prototype = new Error();
-RemnantError.prototype.constructor = RemnantError;
+var jsonStreamSplitter = require('json-stream-splitter');
 
 module.exports = function jsonStream(bytes){
   return function jsonStream(req, res, next) {
-    var incomingData = ""
+    var incomingData = '';
     var errs = [];
     // for parsing incoming jsonstream data via a POST or PUT request
-    req.jsonStream = function(cbEach, cbDone) {
-      if (req.method != "POST" && req.method != "PUT") {
-        return cbDone(new Error("Can not stream in unless the request method is POST or PUT got " + req.method));
+    req.jsonStream = function() {
+      var splitStream = jsonStreamSplitter.splitStream(req);
+      if (req.method !== 'POST' && req.method !== 'PUT') {
+        splitStream.emit('error', new Error('Can not stream in unless the request method is POST or PUT, got ' + req.method));
       }
-      if (req.headers["content-type"] != "application/jsonstream") {
-        return cbDone(new Error("Only a content-type of application/jsonstream may be streamed in got " + req.headers["content-type"]));
+      if (req.headers['content-type'] !== 'application/jsonstream') {
+        splitStream.emit('error', new Error('Only a content-type of application/jsonstream may be streamed in got ' + req.headers['content-type']));
       }
-      req.on("data", function(data) {
-        incomingData += data.toString("utf8");
-        var chunks = incomingData.split("\n");
-        // The last one will always have the last bit or empty
-        incomingData = chunks[chunks.length - 1];
-        // Iterate over all but the last one, handled above
-        for (var i = 0; i < chunks.length - 1; ++i) {
-          var obj;
-          try {
-            obj = JSON.parse(chunks[i]);
-          } catch (E) {
-            errs.push(E);
-          }
-          cbEach(obj);
-        }
-      });
-      req.on("end", function() {
-        if (incomingData) errs.push(new RemnantError(incomingData));
-        if (errs.length > 0) return cbDone(errs);
-        cbDone();
-      });
+
+      return splitStream;
     }
 
     // for pushing out jsonstream data via a GET request

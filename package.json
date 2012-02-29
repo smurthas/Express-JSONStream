@@ -1,7 +1,7 @@
 {
   "name": "express-jsonstream",
   "description": "Simple middleware for JSON streaming in Express",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "Simon Murtha-Smith <simon@murtha-smith.com>",
   "keywords": [
     "express",
@@ -12,6 +12,9 @@
   "repository" : {
     "type": "git",
     "url": "http://github.com/smurthas/express-jsonstreaming.git"
+  },
+  "dependencies": {
+    "json-stream-splitter": "0.0.3"
   },
   "engines": {
     "node": ">=0.4.6 <0.7.0"
